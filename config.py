@@ -1,8 +1,11 @@
 from __future__ import annotations
+
 import logging
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 logger = logging.getLogger(__name__)
+
 
 class Settings(BaseSettings):
     observer_name: str = "Semarang"
@@ -16,32 +19,44 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(env_file=".env")
 
+
 settings = Settings()
+
 
 class AstronomyContext:
     timescale = None
     ephemeris = None
     earth = None
-    skyfield_observer = None
+    skyfield_observer = None      
+    satellite_observer = None     
     astropy_observer = None
+
 
 context = AstronomyContext()
 
-def init_skyfield():
-    from skyfield import load, wgs84
 
-    logger.info("Memuat Skyfield timescale...")
+def init_skyfield() -> None:
+    from skyfield.api import load, wgs84
 
+    logger.info("Loading Skyfield timescale...")
     context.timescale = load.timescale()
+
     logger.info(
-        "Memuat JPL ephemeris '%s' (mungkin men download ~17MB di pertama kali di jalankan)...",
+        "Loading JPL ephemeris '%s' (may download ~17MB on first run)...",
         settings.ephemeris_file,
     )
-
     context.ephemeris = load(settings.ephemeris_file)
     context.earth = context.ephemeris["earth"]
 
+    # Untuk planet/bulan/matahari
     context.skyfield_observer = context.earth + wgs84.latlon(
+        settings.observer_lat,
+        settings.observer_lon,
+        elevation_m=settings.observer_alt,
+    )
+
+    # Untuk satelit
+    context.satellite_observer = wgs84.latlon(
         settings.observer_lat,
         settings.observer_lon,
         elevation_m=settings.observer_alt,
@@ -55,6 +70,7 @@ def init_skyfield():
         settings.observer_alt,
     )
 
+
 def init_astropy() -> None:
     from astropy import units as u
     from astropy.coordinates import EarthLocation
@@ -65,4 +81,3 @@ def init_astropy() -> None:
         height=settings.observer_alt * u.m,
     )
     logger.info("Astropy initialized — EarthLocation ready")
-

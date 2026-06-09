@@ -12,22 +12,27 @@ from config import context, settings
 from models.response import CelestialPosition
 
 logger = logging.getLogger(__name__)
+
 _tle_cache: dict[int, tuple[str, str, str, datetime]] = {}
 _cache_lock = threading.Lock()
+
 
 class CelestrakError(Exception):
     pass
 
-def  _fetch_tle_from_celestrak(norad_id: int) -> tuple[str, str, str]:
+
+def _fetch_tle_from_celestrak(norad_id: int) -> tuple[str, str, str]:
     url = f"{settings.celestrak_url}?CATNR={norad_id}&FORMAT=tle"
 
     try:
         with httpx.Client(timeout=30.0) as client:
             response = client.get(url)
             response.raise_for_status()
+    except httpx.HTTPStatusError as e:
+        raise CelestrakError(f"Celestrak returned HTTP {e.response.status_code}")
     except httpx.RequestError as e:
         raise CelestrakError(f"Unable to reach Celestrak: {e}")
-    
+
     lines = [line for line in response.text.strip().splitlines() if line.strip()]
 
     if len(lines) < 3:
@@ -77,7 +82,6 @@ def _get_tle(norad_id: int) -> tuple[str, str, str]:
             status_code=503,
             detail=f"Celestrak unavailable and no cached data for NORAD ID {norad_id}: {e}",
         )
-    
 
 
 def get_satellite_position(
@@ -96,7 +100,8 @@ def get_satellite_position(
     satellite = EarthSatellite(line1, line2, name, context.timescale)
     t = context.timescale.now()
 
-    difference = satellite - context.skyfield_observer
+
+    difference = satellite - context.satellite_observer
     topocentric = difference.at(t)
     alt, az, distance = topocentric.altaz()
 

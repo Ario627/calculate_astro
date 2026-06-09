@@ -38,7 +38,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Astro Service",
-    description="Real-time celestial position calculator for Miniatur Observatorium Otomatis",
+    description="Realtime aja lah, buat apa yang ribet",
     version="1.0.0",
     lifespan=lifespan,
 )
@@ -60,12 +60,21 @@ async def root():
         status="running",
     )
 
+@app.get("/", response_model=RootResponse)
+async def root():
+    return RootResponse(
+        service="astro-service",
+        version="1.0.0",
+        status="running",
+    )
+
+
+@app.get("/health", response_model=HealthResponse)
 async def health():
     return HealthResponse(
         status="ok",
         timestamp=datetime.now(timezone.utc).isoformat(),
     )
-
 
 @app.get("/objects", response_model=ObjectsResponse)
 async def list_objects():
