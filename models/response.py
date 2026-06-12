@@ -16,6 +16,9 @@ class CelestialPosition(BaseModel):
     distance_km: Optional[float] = Field(
         None, description="Jarak dalam kilometer (None untuk bintang)"
     )
+    distance_au: Optional[float] = Field(
+        None, description="Jarak dalam AU (untuk planet, None untuk satelit dan bintang)"
+    )
     azimuth_rate: Optional[float] = Field(
         None, description="Kecepatan gerak horizontal °/detik (None untuk bintang)"
     )

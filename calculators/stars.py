@@ -1,6 +1,8 @@
 from __future__ import annotations
+
 import logging
 import threading
+
 from astropy import units as u
 from astropy.coordinates import AltAz, SkyCoord
 from astropy.coordinates.name_resolve import NameResolveError
@@ -34,8 +36,9 @@ BRIGHT_STARS: dict[str, dict[str, float]] = {
     "regulus": {"ra": 152.093, "dec": 11.967},
 }
 
+
 def _get_star_coord(name: str) -> SkyCoord:
-    name_lower  = name.lower().strip()
+    name_lower = name.lower().strip()
 
     with _star_cache_lock:
         if name_lower in _star_cache:
@@ -64,7 +67,7 @@ def _get_star_coord(name: str) -> SkyCoord:
             status_code=404,
             detail=f"Star '{name}' not found in catalog: {e}",
         )
-    
+
 
 def get_star_position(name: str) -> CelestialPosition:
     if context.astropy_observer is None:
@@ -85,6 +88,10 @@ def get_star_position(name: str) -> CelestialPosition:
         azimuth=round(star_altaz.az.degree, 4),
         altitude=round(star_altaz.alt.degree, 4),
         distance_km=None,
+        distance_au=None,
+        azimuth_rate=None,
+        altitude_rate=None,
         is_visible=star_altaz.alt.degree > 0,
+        illuminated=None,
         timestamp=obstime.isot,
     )
